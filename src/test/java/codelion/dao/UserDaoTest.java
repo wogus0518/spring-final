@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
+import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -32,5 +33,12 @@ class UserDaoTest {
 
         User findUser = userDao.findById(id);
         assertEquals(findUser.getName(), "jaehyun");
+    }
+
+    @Test
+    @DisplayName("findById 실패 시나리오")
+    void findByIdFail() {
+        String id = "01";
+        assertThrows(NoSuchElementException.class, () -> userDao.findById(id));
     }
 }
