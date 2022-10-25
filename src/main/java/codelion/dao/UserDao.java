@@ -1,6 +1,9 @@
 package codelion.dao;
 
 import codelion.dao.connection.ConnectionMaker;
+import codelion.dao.strategy.AddStrategy;
+import codelion.dao.strategy.DeletAllStrategy;
+import codelion.dao.strategy.StatementStrategy;
 import codelion.domain.User;
 
 import java.sql.*;
@@ -17,25 +20,7 @@ public class UserDao {
     }
 
     public void add(User user) throws SQLException {
-        String sql = "INSERT INTO users(id, name, password) VALUES(?, ?, ?)";
-
-        Connection conn = null;
-        PreparedStatement ps = null;
-
-        try {
-            conn = cm.getConnection();
-            ps = conn.prepareStatement(sql);
-
-            ps.setString(1, user.getId());
-            ps.setString(2, user.getName());
-            ps.setString(3, user.getPassword());
-
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throw e;
-        }finally {
-            close(conn, ps, null);
-        }
+        jdbcContextWithStatementStrategy(new AddStrategy(user));
     }
 
     public User findById(String id) throws SQLException {
@@ -90,22 +75,24 @@ public class UserDao {
     }
 
     public void deleteAll() throws SQLException {
-        String sql = "DELETE FROM users";
+        jdbcContextWithStatementStrategy(new DeletAllStrategy());
+    }
 
+    private void jdbcContextWithStatementStrategy(StatementStrategy stmt) throws SQLException {
         Connection conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
 
         try {
             conn = cm.getConnection();
-            ps = conn.prepareStatement(sql);
-
+            ps = stmt.makePreparedStatement(conn);
             ps.executeUpdate();
         } catch (SQLException e) {
             throw e;
         } finally {
-            close(conn, ps, null);
+            close(conn, ps, rs);
         }
+        close(conn, ps, rs);
     }
 
     private void close(Connection conn, Statement stmt, ResultSet rs) {
